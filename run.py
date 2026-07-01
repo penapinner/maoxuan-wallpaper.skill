@@ -56,7 +56,7 @@ def main():
     else:
         q = random.choice(quotes)
 
-    print(f"📜 Quote #{quotes.index(q) + 1}: {q['quote']}")
+    print(f"[Quote #{quotes.index(q) + 1}] {q['quote']}")
     print(f"   {q['volume']} · {q['article']}")
 
     # Build command

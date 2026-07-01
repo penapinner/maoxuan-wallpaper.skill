@@ -47,10 +47,9 @@ else:  # Linux
 
 
 def _find_font(keywords, fallback_keywords=None):
-    """Search font directories for a font matching any of the keywords."""
-    all_keywords = list(keywords)
-    if fallback_keywords:
-        all_keywords += list(fallback_keywords)
+    """Search font directories for a font matching any of the keywords.
+    Primary keywords are searched first; fallback only if nothing found."""
+    # Phase 1: search primary keywords only
     for d in _FONT_DIRS:
         if not os.path.isdir(d):
             continue
@@ -59,10 +58,23 @@ def _find_font(keywords, fallback_keywords=None):
                 lower = f.lower()
                 if not lower.endswith((".ttf", ".ttc", ".otf")):
                     continue
-                for kw in all_keywords:
+                for kw in keywords:
                     if kw in lower:
                         return os.path.join(root, f)
-    # Last resort: find any serif/calligraphy-looking font
+    # Phase 2: search fallback keywords only if primary yielded nothing
+    if fallback_keywords:
+        for d in _FONT_DIRS:
+            if not os.path.isdir(d):
+                continue
+            for root, _dirs, files in os.walk(d):
+                for f in files:
+                    lower = f.lower()
+                    if not lower.endswith((".ttf", ".ttc", ".otf")):
+                        continue
+                    for kw in fallback_keywords:
+                        if kw in lower:
+                            return os.path.join(root, f)
+    # Last resort: find any CJK-capable font
     for d in _FONT_DIRS:
         if not os.path.isdir(d):
             continue
@@ -71,17 +83,66 @@ def _find_font(keywords, fallback_keywords=None):
                 lower = f.lower()
                 if not lower.endswith((".ttf", ".ttc", ".otf")):
                     continue
-                if any(k in lower for k in ["kaiti", "xing", "song", "serif", "kaiu", "kai"]):
+                if any(k in lower for k in ["msyh", "yahei", "simhei", "simsun", "songti",
+                                            "kaiti", "xing", "fang", "hei", "deng",
+                                            "kaiu", "kai", "ming", "yuan"]):
                     return os.path.join(root, f)
     raise FileNotFoundError(
-        "No Chinese calligraphy font found.\n"
-        "Install one of: 汉仪黄科行书简, 华文行楷, STXingKai, or any KaiTi font."
+        "No Chinese font found.\n"
+        "Install one of: 微软雅黑, 黑体, 宋体, 楷体, or any CJK font."
     )
 
 
 @functools.lru_cache(maxsize=None)
+def detect_screen_resolution():
+    """Auto-detect primary monitor resolution. Returns (width, height)."""
+    try:
+        if platform.system() == "Windows":
+            import ctypes
+            user32 = ctypes.windll.user32
+            # GetDeviceCaps DESKTOPHORZRES/DESKTOPVERTRES = actual physical pixels
+            gdi32 = ctypes.windll.gdi32
+            hdc = user32.GetDC(0)
+            w = gdi32.GetDeviceCaps(hdc, 118)
+            h = gdi32.GetDeviceCaps(hdc, 117)
+            user32.ReleaseDC(0, hdc)
+            if w > 0 and h > 0:
+                return w, h
+            return user32.GetSystemMetrics(0), user32.GetSystemMetrics(1)
+        elif platform.system() == "Darwin":
+            import subprocess
+            out = subprocess.check_output(
+                ["system_profiler", "SPDisplaysDataType"], text=True, timeout=5
+            )
+            for line in out.splitlines():
+                if "Resolution" in line:
+                    for part in line.split():
+                        if "x" in part and part.replace("x", "").strip().isdigit():
+                            w_s, h_s = part.split("x")
+                            return int(w_s), int(h_s)
+            return 1920, 1080
+        else:  # Linux
+            import subprocess
+            out = subprocess.check_output(
+                ["xrandr", "--current"], text=True, timeout=5
+            )
+            for line in out.splitlines():
+                if "*" in line:
+                    for part in line.split():
+                        if "x" in part:
+                            w_s = part.split("x")[0]
+                            # Handle "x1080" or "1920x1080"
+                            h_part = part.split("x")[1].split("+")[0].split()[0]
+                            if w_s.lstrip("+-").isdigit() and h_part.lstrip("+-").isdigit():
+                                return int(w_s), int(h_part)
+            return 1920, 1080
+    except Exception:
+        return 1920, 1080
+
+
+@functools.lru_cache(maxsize=None)
 def detect_calligraphy_font():
-    # 优先使用项目目录下的汉仪黄科行书简字体
+    # 指定: 项目目录下的汉仪黄科行书简
     script_dir = os.path.dirname(os.path.abspath(__file__))
     local_font = os.path.join(script_dir, "hanyihuangkexingshujian.ttf")
     if os.path.isfile(local_font):
@@ -94,14 +155,26 @@ def detect_calligraphy_font():
 
 @functools.lru_cache(maxsize=None)
 def detect_kaiti_font():
+    # 指定: Windows 楷体
+    if platform.system() == "Windows":
+        for p in [r"C:\Windows\Fonts\simkai.ttf", r"C:\Windows\Fonts\kaiu.ttf",
+                  r"C:\Windows\Fonts\STKAITI.TTF"]:
+            if os.path.isfile(p):
+                return p
     return _find_font(["kaiti", "simkai", "kaiu"], ["xingkai", "stxing", "songti"])
 
 
 @functools.lru_cache(maxsize=None)
 def detect_hei_font():
+    # 指定: Windows 微软雅黑
+    if platform.system() == "Windows":
+        for p in [r"C:\Windows\Fonts\msyh.ttc", r"C:\Windows\Fonts\simhei.ttf",
+                  r"C:\Windows\Fonts\simsun.ttc", r"C:\Windows\Fonts\deng.ttf"]:
+            if os.path.isfile(p):
+                return p
     return _find_font(
-        ["msyh", "microsoft yahei", "simhei", "heiti", "noto sans cjk"],
-        ["sans", "arial"],
+        ["msyh", "yahei", "simhei", "hei", "deng"],
+        ["simsun", "songti", "fang", "ming", "sans"],
     )
 
 
@@ -123,8 +196,8 @@ def parse_args():
     p.add_argument("--font-kaiti", default=None, help="楷体路径")
     p.add_argument("--font-hei", default=None, help="黑体路径")
     p.add_argument("--font-size", type=int, default=None, help="主文字号 (auto-calc)")
-    p.add_argument("--width", type=int, default=1920, help="宽度 (default: 1920)")
-    p.add_argument("--height", type=int, default=1080, help="高度 (default: 1080)")
+    p.add_argument("--width", type=int, default=0, help="宽度 (default: 自动检测屏幕分辨率)")
+    p.add_argument("--height", type=int, default=0, help="高度 (default: 自动检测屏幕分辨率)")
     p.add_argument("--seed", type=int, default=None, help="随机种子")
     p.add_argument("--set-wallpaper", action="store_true", help="生成后设为桌面壁纸")
     return p.parse_args()
@@ -160,7 +233,7 @@ def set_wallpaper(image_path):
         result = ctypes.windll.user32.SystemParametersInfoW(20, 0, abs_path, 3)
         if not result:
             raise RuntimeError("Failed to set wallpaper on Windows")
-        print(f"🖥️  Wallpaper set on Windows")
+        print(f"[OK] Wallpaper set on Windows")
 
     elif _sys == "Darwin":
         # macOS: use osascript to tell Finder
@@ -171,7 +244,7 @@ def set_wallpaper(image_path):
         '''
         try:
             subprocess.run(["osascript", "-e", script], check=True)
-            print(f"🖥️  Wallpaper set on macOS")
+            print(f"[OK] Wallpaper set on macOS")
         except subprocess.CalledProcessError:
             # Fallback: try systemevents for all spaces
             script2 = f'''
@@ -180,7 +253,7 @@ def set_wallpaper(image_path):
             end tell
             '''
             subprocess.run(["osascript", "-e", script2], check=True)
-            print(f"🖥️  Wallpaper set on macOS (all spaces)")
+            print(f"[OK] Wallpaper set on macOS (all spaces)")
 
     elif _sys == "Linux":
         # Try various desktop environments
@@ -196,7 +269,7 @@ def set_wallpaper(image_path):
                      "picture-uri", f"file://{abs_path}"],
                     check=True, capture_output=True,
                 )
-                print(f"🖥️  Wallpaper set on GNOME")
+                print(f"[OK] Wallpaper set on GNOME")
                 success = True
             except Exception:
                 tried.append("gsettings (GNOME)")
@@ -208,7 +281,7 @@ def set_wallpaper(image_path):
                     ["plasma-apply-wallpaperimage", abs_path],
                     check=True, capture_output=True,
                 )
-                print(f"🖥️  Wallpaper set on KDE")
+                print(f"[OK] Wallpaper set on KDE")
                 success = True
             except Exception:
                 tried.append("plasma-apply-wallpaperimage (KDE)")
@@ -227,7 +300,7 @@ def set_wallpaper(image_path):
                              "-p", m, "-s", abs_path],
                             check=True,
                         )
-                print(f"🖥️  Wallpaper set on XFCE")
+                print(f"[OK] Wallpaper set on XFCE")
                 success = True
             except Exception:
                 tried.append("xfconf-query (XFCE)")
@@ -239,13 +312,13 @@ def set_wallpaper(image_path):
                     ["feh", "--bg-fill", abs_path],
                     check=True, capture_output=True,
                 )
-                print(f"🖥️  Wallpaper set via feh")
+                print(f"[OK] Wallpaper set via feh")
                 success = True
             except Exception:
                 tried.append("feh")
 
         if not success:
-            print(f"⚠️  Could not set wallpaper automatically on Linux.")
+            print(f"[WARN] Could not set wallpaper automatically on Linux.")
             print(f"   Tried: {', '.join(tried)}")
             print(f"   Image saved to: {abs_path}")
 
@@ -254,6 +327,13 @@ def set_wallpaper(image_path):
 
 def generate(args):
     W, H = args.width, args.height
+    if W <= 0 or H <= 0:
+        detected = detect_screen_resolution()
+        if W <= 0:
+            W = detected[0]
+        if H <= 0:
+            H = detected[1]
+        print(f">>> 自动检测屏幕分辨率: {W}x{H}")
     if args.seed is not None:
         random.seed(args.seed)
 
@@ -423,8 +503,36 @@ def generate(args):
     font_note = ImageFont.truetype(FONT_HEI, 17)
 
     nx = W - 80
-    ny = H - 280
     maxw = 360
+
+    def wrap(text, font, mw):
+        lines, cur = [], ""
+        for ch in text:
+            test = cur + ch
+            if font.getbbox(test)[2] - font.getbbox(test)[0] > mw and cur:
+                lines.append(cur)
+                cur = ch
+            else:
+                cur = test
+        if cur:
+            lines.append(cur)
+        return lines
+
+    # Calculate total note section height to prevent bottom overflow
+    note_h = 0
+    for txt, fnt in [(args.volume, font_src_book), (args.article, font_src), (args.date, font_src)]:
+        bb = fnt.getbbox(txt)
+        note_h += bb[3] - bb[1] + 10
+    note_h += 8 + 1 + 16  # separator line and padding
+    bb = font_nl.getbbox("段  落  注  释")
+    note_h += bb[3] - bb[1] + 25
+    for ln in wrap(args.note, font_note, maxw):
+        bb = font_note.getbbox(ln)
+        note_h += bb[3] - bb[1] + 8
+
+    # Position: leave 50px bottom margin; don't overlap the separator line
+    ny = min(H - 280, H - note_h - 50)
+    ny = max(ny, line_y + 40)
 
     src_lines = [
         (args.volume, font_src_book, LINE_GOLD),
@@ -446,19 +554,6 @@ def generate(args):
     draw.text((nx - (bbl[2] - bbl[0]), cy2), lbl, font=font_nl, fill=LINE_GOLD)
     cy2 += 25
 
-    def wrap(text, font, mw):
-        lines, cur = [], ""
-        for ch in text:
-            test = cur + ch
-            if font.getbbox(test)[2] - font.getbbox(test)[0] > mw and cur:
-                lines.append(cur)
-                cur = ch
-            else:
-                cur = test
-        if cur:
-            lines.append(cur)
-        return lines
-
     for ln in wrap(args.note, font_note, maxw):
         bb = font_note.getbbox(ln)
         draw.text((nx - (bb[2] - bb[0]), cy2), ln, font=font_note, fill=NOTE_BODY)
@@ -475,7 +570,7 @@ def generate(args):
 
     # --- Save ---
     img.save(args.output, 'PNG', quality=95)
-    print(f"\n✅ Done: {os.path.abspath(args.output)}  ({W}x{H})")
+    print(f"\n[Done] {os.path.abspath(args.output)}  ({W}x{H})")
     return args.output
 
 
