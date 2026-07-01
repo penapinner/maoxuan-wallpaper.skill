@@ -1,0 +1,8 @@
+{
+  "skills": [
+    {
+      "name": "mao-wallpaper",
+      "prompt": "毛选语录艺术壁纸生成器 — 从100条精选毛选语录中随机选取一句，生成书法风格桌面壁纸。\n\n## 执行步骤\n1. 读取项目根目录的 `quotes.json`，共 100 条语录\n2. 如果用户指定了编号（如 `/mao-wallpaper 52`），用该条语录；否则随机选一条\n3. 运行 `python run.py [编号] --output mao_wallpaper.png`（省略编号则随机）\n   - 如果用户要求设为壁纸，加 `--set-wallpaper` 参数\n   - 如果用户要求自定义输出路径，加 `--output <路径>`\n4. 告诉用户选中的是哪条语录（序号 + 原文 + 出处），以及壁纸保存位置\n\n## 命令格式\n- `/mao-wallpaper` — 随机语录，保存为 mao_wallpaper.png\n- `/mao-wallpaper 52` — 指定第 52 条\n- `/mao-wallpaper --set-wallpaper` — 随机 + 设为桌面壁纸\n- `/mao-wallpaper 7 --set-wallpaper` — 指定第 7 条 + 设为壁纸\n- `/mao-wallpaper --output my.png` — 自定义输出路径\n- `/mao-wallpaper --list` — 列出全部 100 条语录\n\n## 项目结构\n- `run.py` — 一键入口（推荐使用）\n- `gen_wallpaper.py` — 核心生成器，支持精细参数控制\n- `quotes.json` — 100 条语录数据\n\n## 注意事项\n- 输出为 1920×1080 PNG，朱砂红书法字 + 羊皮纸暖色调 + 毛选印章风格\n- 依赖 Pillow：`pip install Pillow`\n- 中文字体自动检测（华文行楷 / 楷体等），如缺字体会报错提示安装"
+    }
+  ]
+}

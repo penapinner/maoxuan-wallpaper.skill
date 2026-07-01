@@ -82,6 +82,16 @@ python gen_wallpaper.py \
 
 ### Claude Code / Claude Desktop
 
+进入项目目录后，直接使用 slash command：
+
+```
+/mao-wallpaper              # 随机语录壁纸
+/mao-wallpaper 52           # 指定第 52 条
+/mao-wallpaper --set-wallpaper  # 随机 + 设为桌面壁纸
+```
+
+或手动操作：
+
 ```
 Generate a Mao Zedong quote wallpaper for my desktop:
 1. Read quotes.json and pick a random entry

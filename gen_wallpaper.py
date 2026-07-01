@@ -17,7 +17,7 @@ Usage:
 Author: WorkBuddy AI (penapinner)
 License: MIT
 """
-import argparse, math, random, os, sys, subprocess, platform
+import argparse, math, random, os, sys, subprocess, platform, functools
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
 
 
@@ -79,17 +79,25 @@ def _find_font(keywords, fallback_keywords=None):
     )
 
 
+@functools.lru_cache(maxsize=None)
 def detect_calligraphy_font():
+    # 优先使用项目目录下的汉仪黄科行书简字体
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    local_font = os.path.join(script_dir, "hanyihuangkexingshujian.ttf")
+    if os.path.isfile(local_font):
+        return local_font
     return _find_font(
         ["huangkexingshu", "hanyihuang", "hyhuang"],
         ["xingkai", "xingka", "stxing", "kaiti", "simkai", "songti", "simsun"],
     )
 
 
+@functools.lru_cache(maxsize=None)
 def detect_kaiti_font():
     return _find_font(["kaiti", "simkai", "kaiu"], ["xingkai", "stxing", "songti"])
 
 
+@functools.lru_cache(maxsize=None)
 def detect_hei_font():
     return _find_font(
         ["msyh", "microsoft yahei", "simhei", "heiti", "noto sans cjk"],
