@@ -1,49 +1,74 @@
-# 毛选壁纸 · MaoXuan Wallpaper
+# 毛选壁纸 · Mao Quote Wallpaper — AI Skill
 
-每天一句毛泽东语录，生成书法艺术桌面壁纸。支持 Windows / macOS / Linux。
+每天一句毛泽东语录，生成书法艺术桌面壁纸。**兼容所有 AI 编程助手**（Claude Code / Copilot / Cursor / Windsurf / 开源 LLM 工具）。
 
-> **100 条精选语录**，涵盖《毛泽东选集》全四卷 +《毛泽东文集》+《毛泽东诗词集》，随每日轮换。
+> **100 条精选语录**，涵盖《毛泽东选集》全四卷 +《毛泽东文集》+《毛泽东诗词集》。
 
 ![Preview](preview.png)
 
 ---
 
-## 效果展示
-
-汉仪黄科行书简 + 羊皮纸暖色调 + 毛选印章 + 出处注释
-
----
-
-## 快速开始
-
-### 1. 安装依赖
+## 快速开始（人类用）
 
 ```bash
 pip install Pillow
+python run.py --set-wallpaper   # 随机语录 + 设为桌面壁纸
+python run.py --list            # 列出全部 100 条
+python run.py 52                # 指定第 52 条
 ```
 
-**中文字体**：脚本会自动检测系统已安装的书法字体。如果没有，安装一个即可：
-- Windows：华文行楷（系统自带）
-- macOS：安装任意楷体/行书字体
-- Linux：`sudo apt install fonts-noto-cjk` 或安装任意楷体
+---
 
-### 2. 一键生成
+## 在 AI 工具中使用
 
-```bash
-# 随机语录
-python run.py
+### Claude Code
 
-# 随机 + 直接设为壁纸
-python run.py --set-wallpaper
+进入项目目录后，直接使用 slash command：
 
-# 指定第 52 条
-python run.py 52
-
-# 列出全部 100 条语录
-python run.py --list
+```
+/mao-wallpaper              # 随机语录壁纸
+/mao-wallpaper 52           # 指定第 52 条
+/mao-wallpaper --set-wallpaper  # 随机 + 设为桌面壁纸
 ```
 
-### 3. 精确控制
+### GitHub Copilot / Codex
+
+```copilot
+@terminal python run.py --set-wallpaper
+```
+
+### Cursor / Windsurf
+
+```
+Run `python run.py --set-wallpaper` to generate a daily Mao quote wallpaper.
+```
+
+### 任意 AI 助手（通用提示词模板）
+
+复制以下内容到任何 AI 对话中：
+
+```
+You are a helpful assistant. I need a Mao Zedong quote desktop wallpaper.
+
+Steps:
+1. Read the file `quotes.json` in this project
+2. Pick one quote randomly (avoid repeating the same quote as last time)
+3. Run this command (replace the placeholder values with the actual quote):
+   python gen_wallpaper.py \
+     --quote "THE_QUOTE_TEXT" \
+     --volume "THE_VOLUME" \
+     --article "THE_ARTICLE" \
+     --date "THE_DATE" \
+     --vertical-year "THE_YEAR" \
+     --note "THE_ANNOTATION" \
+     --output "mao_quote_wallpaper.png" \
+     --set-wallpaper
+4. Tell me which quote was selected
+```
+
+---
+
+## 精确控制
 
 ```bash
 python gen_wallpaper.py \
@@ -51,7 +76,7 @@ python gen_wallpaper.py \
   --volume "《毛泽东选集》第一卷" \
   --article "《星星之火，可以燎原》" \
   --date "一九三〇年一月五日" \
-  --year "一九三〇" \
+  --vertical-year "一九三〇" \
   --note "毛泽东致林彪的复信。指出革命力量虽处微弱..." \
   --output wallpaper.png \
   --set-wallpaper
@@ -65,7 +90,7 @@ python gen_wallpaper.py \
 | `--volume` | ✅ | 出处卷次 |
 | `--article` | ✅ | 出处篇名 |
 | `--date` | ✅ | 中文日期 |
-| `--year` | ✅ | 左下角竖排年份 |
+| `--vertical-year` / `--year` | ✅ | 左下角竖排年份（两个参数名都支持） |
 | `--note` | ✅ | 段落注释 |
 | `--output` | | 输出路径（默认 `mao_quote_wallpaper.png`） |
 | `--font` | | 主字体路径（自动检测） |
@@ -76,68 +101,35 @@ python gen_wallpaper.py \
 
 ---
 
-## 在 AI 智能体中使用
+## 设计规范
 
-本工具**不依赖任何特定 AI 平台**，任何能执行 Shell 命令的 AI 编程助手都能使用：
+| 元素 | 说明 |
+|------|------|
+| 分辨率 | 1920×1080 |
+| 背景 | 羊皮纸暖色径向渐变 + 纸质纹理 |
+| 主语录 | 朱砂红渐变（上→下：亮红→暗红），暖金色光晕 |
+| 主字体 | 汉仪黄科行书简（自动检测，回退华文行楷 / 楷体） |
+| 光晕 | 中心暖金色辉光，半径 550px |
+| 印章 | 右上角红色「毛选」圆角方框 |
+| 装饰 | 左上「毛主席语录」标签，左下竖排年份 |
+| 出处 | 右下角：卷次、篇名、日期、段落注释 |
+| 暗角 | 温暖色调边缘加深 |
 
-### Claude Code / Claude Desktop
+---
 
-进入项目目录后，直接使用 slash command：
-
-```
-/mao-wallpaper              # 随机语录壁纸
-/mao-wallpaper 52           # 指定第 52 条
-/mao-wallpaper --set-wallpaper  # 随机 + 设为桌面壁纸
-```
-
-或手动操作：
-
-```
-Generate a Mao Zedong quote wallpaper for my desktop:
-1. Read quotes.json and pick a random entry
-2. Run: python gen_wallpaper.py --quote "..." --volume "..." --article "..." --date "..." --year "..." --note "..." --set-wallpaper
-3. Report back which quote you chose
-```
-
-### GitHub Copilot / Codex
+## 项目结构
 
 ```
-@terminal python run.py --set-wallpaper
-```
-
-### Cursor / Windsurf
-
-直接让 AI 执行：
-```
-Run `python run.py --set-wallpaper` to generate a daily Mao quote wallpaper.
-```
-
-### WorkBuddy
-
-技能已内置安装，对话中说：
-```
-换一张毛选壁纸
-```
-
-### 通用提示词（适用所有 AI 助手）
-
-```
-You are a helpful assistant. I need a Mao Zedong quote desktop wallpaper.
-
-Steps:
-1. Read the file `quotes.json` in this project
-2. Pick one quote randomly
-3. Run this command (replace the placeholder values with the actual quote):
-   python gen_wallpaper.py \
-     --quote "THE_QUOTE_TEXT" \
-     --volume "THE_VOLUME" \
-     --article "THE_ARTICLE" \
-     --date "THE_DATE" \
-     --year "THE_YEAR" \
-     --note "THE_ANNOTATION" \
-     --output "mao_quote_wallpaper.png" \
-     --set-wallpaper
-4. Tell me which quote was selected
+maoxuan-wallpaper.skill/
+├── .claude/
+│   └── settings.json    ← Claude Code slash command 定义
+├── gen_wallpaper.py     ← 核心生成器（跨平台，支持 --set-wallpaper）
+├── run.py               ← 一键随机入口
+├── quotes.json          ← 100 条语录库（JSON，方便 AI 解析）
+├── hanyihuangkexingshujian.ttf ← 汉仪黄科行书简字体
+├── AGENT.md             ← AI 智能体接手指南
+├── README.md            ← 本文件
+└── requirements.txt     ← Pillow>=9.0.0
 ```
 
 ---
@@ -148,17 +140,16 @@ Steps:
 
 ```bash
 # 每天早上 8:00 更换壁纸
-0 8 * * * cd /path/to/mao-quote-wallpaper && python run.py --set-wallpaper
+0 8 * * * cd /path/to/maoxuan-wallpaper.skill && python run.py --set-wallpaper
 ```
 
 ### Windows（任务计划程序）
 
 ```powershell
-# 创建每日任务
-schtasks /create /tn "MaoWallpaper" /tr "python C:\path\to\mao-quote-wallpaper\run.py --set-wallpaper" /sc daily /st 08:00
+schtasks /create /tn "MaoWallpaper" /tr "python C:\path\to\maoxuan-wallpaper.skill\run.py --set-wallpaper" /sc daily /st 08:00
 ```
 
-### GitHub Actions（每日自动推送到仓库）
+### GitHub Actions
 
 ```yaml
 name: Daily Mao Wallpaper
@@ -179,21 +170,18 @@ jobs:
 
 ---
 
-## 项目结构
+## 自定义视觉
 
+编辑 `gen_wallpaper.py` 中的颜色变量：
+
+```python
+BG_CENTER = (250, 245, 232)  # 中心底色（羊皮纸暖色）
+INK_TOP   = (200, 35, 35)    # 字色上（朱砂红）
+INK_BOT   = (110, 16, 16)    # 字色下（深红）
+SEAL_RED  = (200, 30, 30)    # 印章红
 ```
-mao-quote-wallpaper/
-├── gen_wallpaper.py    # 核心生成器（跨平台）
-├── run.py              # 一键随机入口
-├── quotes.json         # 100 条语录库（JSON，方便 AI 解析）
-└── requirements.txt    # Pillow
-```
 
----
-
-## 自定义
-
-### 添加自己的语录
+## 添加语录
 
 编辑 `quotes.json`，按格式追加：
 
@@ -207,19 +195,6 @@ mao-quote-wallpaper/
   "note": "毛泽东在张思德追悼会上的讲演..."
 }
 ```
-
-### 修改视觉风格
-
-编辑 `gen_wallpaper.py` 顶部的颜色变量：
-
-```python
-BG_CENTER = (250, 245, 232)  # 中心底色
-INK_TOP   = (200, 35, 35)    # 字色上
-INK_BOT   = (110, 16, 16)    # 字色下
-SEAL_RED  = (200, 30, 30)    # 印章红
-```
-
----
 
 ## 语录库覆盖
 

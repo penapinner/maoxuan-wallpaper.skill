@@ -66,7 +66,7 @@ def main():
         "--volume", q["volume"],
         "--article", q["article"],
         "--date", q["date"],
-        "--year", q["year"],
+        "--vertical-year", q["year"],
         "--note", q["note"],
         "--output", args.output,
     ]

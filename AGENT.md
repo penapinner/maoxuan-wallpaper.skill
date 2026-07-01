@@ -14,7 +14,8 @@ E:\20260701毛选语录壁纸\
 ├── run.py               ← 一键随机入口
 ├── quotes.json          ← 100 条语录库（JSON）
 ├── requirements.txt     ← Pillow>=9.0.0
-├── README.md            ← 用户向使用说明
+├── hanyihuangkexingshujian.ttf ← 汉仪黄科行书简字体
+├── README.md            ← 跨平台使用说明
 ├── .claude\
 │   └── settings.json    ← Skill 定义（/mao-wallpaper 命令）
 └── .gitignore
@@ -60,7 +61,7 @@ python gen_wallpaper.py \
   --volume "《毛泽东选集》第一卷" \
   --article "《星星之火，可以燎原》" \
   --date "一九三〇年一月五日" \
-  --year "一九三〇" \
+  --vertical-year "一九三〇" \
   --note "毛泽东致林彪的复信..." \
   --output wallpaper.png \
   --set-wallpaper
@@ -101,6 +102,17 @@ python gen_wallpaper.py \
 - **Linux**：依次尝试 GNOME / KDE / XFCE / feh
 
 `gen_wallpaper.py` 和 `run.py` 都支持 `--set-wallpaper` 参数。
+
+## 跨平台 AI 支持
+
+本工具可在以下 AI 平台使用：
+
+| 平台 | 方式 |
+|------|------|
+| **Claude Code** | 进入项目目录，输入 `/mao-wallpaper` |
+| **GitHub Copilot / Codex** | `@terminal python run.py --set-wallpaper` |
+| **Cursor / Windsurf** | 让 AI 执行 `python run.py --set-wallpaper` |
+| **任意 AI 助手** | 使用 README.md 中的通用提示词模板 |
 
 ## 每日自动化
 

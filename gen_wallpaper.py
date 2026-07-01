@@ -115,7 +115,8 @@ def parse_args():
     p.add_argument("--volume", required=True, help="出处卷次 (volume)")
     p.add_argument("--article", required=True, help="出处篇名 (article title)")
     p.add_argument("--date", required=True, help="日期，如 一九三〇年一月五日")
-    p.add_argument("--year", required=True, help="左下角竖排年份，如 一九三〇")
+    p.add_argument("--year", help="左下角竖排年份，如 一九三〇（与 --vertical-year 同义）")
+    p.add_argument("--vertical-year", help="左下角竖排年份，如 一九三〇（与 --year 同义）")
     p.add_argument("--note", required=True, help="段落注释 (annotation)")
     p.add_argument("--output", default="mao_quote_wallpaper.png", help="输出PNG路径")
     p.add_argument("--font", default=None, help="主书法字体路径 (auto-detect)")
@@ -262,6 +263,11 @@ def generate(args):
     FONT_HEI = args.font_hei or detect_hei_font()
     font_size = args.font_size or calc_font_size(args.quote, W * 0.75, FONT_MAIN)
 
+    # Resolve year (either --year or --vertical-year)
+    year = args.year or args.vertical_year
+    if not year:
+        raise ValueError("必须提供 --year 或 --vertical-year 参数")
+
     # ---- Color palette (bright / parchment style) ----
     BG_CENTER = (250, 245, 232)
     BG_EDGE   = (225, 215, 195)
@@ -406,7 +412,7 @@ def generate(args):
 
     # Bottom-left vertical year
     font_year = ImageFont.truetype(FONT_KAITI, 15)
-    for i, ch in enumerate(args.year):
+    for i, ch in enumerate(year):
         draw.text((85, H - 180 + i * 24), ch, font=font_year, fill=(130, 95, 55))
 
     # --- 6. Source & annotation ---
