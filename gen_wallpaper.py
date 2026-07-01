@@ -208,17 +208,43 @@ def parse_args():
 def calc_font_size(quote, max_width, font_path):
     char_count = len(quote)
     if char_count <= 6:
-        return 220
+        size = 220
     elif char_count <= 10:
-        return 190
+        size = 190
     elif char_count <= 15:
-        return 150
+        size = 150
     elif char_count <= 20:
-        return 110
+        size = 110
     elif char_count <= 30:
-        return 80
+        size = 80
     else:
-        return 60
+        size = 60
+    return size
+
+
+def split_quote(text, font, max_width):
+    """Split quote into lines at commas if it exceeds max_width."""
+    if font.getbbox(text)[2] - font.getbbox(text)[0] <= max_width:
+        return [text]
+    lines, remaining = [], text
+    while remaining:
+        commas = [i for i, ch in enumerate(remaining) if ch in '，,、；;']
+        split_at = None
+        # Find the last comma where text up to it fits within max_width
+        for pos in reversed(commas):
+            segment = remaining[:pos + 1]
+            if font.getbbox(segment)[2] - font.getbbox(segment)[0] <= max_width:
+                split_at = pos + 1  # include the comma
+                break
+        if split_at is None:
+            # No fitting comma, break at max_width boundary
+            for i in range(len(remaining), 0, -1):
+                if font.getbbox(remaining[:i])[2] - font.getbbox(remaining[:i])[0] <= max_width:
+                    split_at = i
+                    break
+        lines.append(remaining[:split_at])
+        remaining = remaining[split_at:].lstrip('，,、；; ')
+    return [l for l in lines if l]
 
 
 # ======================== Wallpaper Setter ========================
@@ -426,20 +452,39 @@ def generate(args):
     print(">>> 4/6  Quote text...")
     quote = args.quote
     font_main = ImageFont.truetype(FONT_MAIN, font_size)
-    bbox = font_main.getbbox(quote)
-    text_w, text_h = bbox[2] - bbox[0], bbox[3] - bbox[1]
-    text_x = (W - text_w) // 2 - bbox[0]
-    text_y = cy - text_h // 2 - bbox[1]
+    # Wrap long quotes at commas into multiple lines
+    max_quote_width = W - 80
+    lines = split_quote(quote, font_main, max_quote_width)
 
-    # Outer glow
+    # Calculate line positions and total block dimensions
+    line_spacing = 12
+    line_items = []  # (text, draw_x, draw_y, line_width, line_height, bbox)
+    total_block_h = -line_spacing
+    for ln in lines:
+        bb = font_main.getbbox(ln)
+        lw = bb[2] - bb[0]
+        lh = bb[3] - bb[1]
+        total_block_h += lh + line_spacing
+        lx = (W - lw) // 2 - bb[0]
+        line_items.append((ln, lx, lw, lh, bb))
+
+    # Center the text block vertically
+    text_y = cy - total_block_h // 2
+    text_h = total_block_h
+
+    # Outer glow (all lines)
     gm = Image.new('L', (W, H), 0)
-    ImageDraw.Draw(gm).text((text_x, text_y), quote, font=font_main, fill=255)
+    gm_draw = ImageDraw.Draw(gm)
+    cur_y = text_y
+    for ln, lx, lw, lh, bb in line_items:
+        gm_draw.text((lx, cur_y), ln, font=font_main, fill=255)
+        cur_y += lh + line_spacing
     gb = gm.filter(ImageFilter.GaussianBlur(25))
     img = Image.composite(Image.new('RGB', (W, H), GLOW_WARM), img, ImageEnhance.Brightness(gb).enhance(0.3))
     gb2 = gm.filter(ImageFilter.GaussianBlur(10))
     img = Image.composite(Image.new('RGB', (W, H), GLOW_AMBER), img, ImageEnhance.Brightness(gb2).enhance(0.15))
 
-    # Cinnabar gradient
+    # Cinnabar gradient (uses text_y and text_h for the full block)
     grad = Image.new('RGB', (W, H), BG_CENTER)
     for y in range(H):
         t = (y - text_y) / text_h
@@ -457,9 +502,13 @@ def generate(args):
         ImageDraw.Draw(grad).line([(0, y), (W, y)], fill=(r, g, b))
     img.paste(grad, (0, 0), gm)
 
-    # Drop shadow
+    # Drop shadow (all lines)
     sm = Image.new('L', (W, H), 0)
-    ImageDraw.Draw(sm).text((text_x + 2, text_y + 2), quote, font=font_main, fill=60)
+    sm_draw = ImageDraw.Draw(sm)
+    cur_y = text_y
+    for ln, lx, lw, lh, bb in line_items:
+        sm_draw.text((lx + 2, cur_y + 2), ln, font=font_main, fill=60)
+        cur_y += lh + line_spacing
     sm = sm.filter(ImageFilter.GaussianBlur(2))
     img = Image.composite(Image.new('RGB', (W, H), BG_EDGE), img, ImageEnhance.Brightness(sm).enhance(0.4))
 
